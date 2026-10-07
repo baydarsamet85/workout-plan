@@ -68,13 +68,13 @@ h1{margin:0;font:700 clamp(40px,12vw,56px)/.95 var(--display);letter-spacing:.01
 .done{display:flex;align-items:center;gap:6px;font:600 14px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);cursor:pointer;padding:4px}
 .done input{width:22px;height:22px;accent-color:var(--acc);margin:0}
 .rx{margin:12px 0 10px;font:700 17px/1.2 var(--display);letter-spacing:.05em;text-transform:uppercase;color:var(--acc)}
-.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
-.figs figure{margin:0;background:var(--fbg);border-radius:10px;padding:6px 6px 8px;min-width:0}
-.figs svg{display:block;width:100%;height:auto}
-.figs figcaption{margin-top:2px;text-align:center;font:600 13px/1.1 var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.figs{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;min-width:0}
+.figs figure{margin:0;padding:0;width:100%;max-width:380px;min-width:0;justify-self:center}
+.figs img{display:block;width:100%;height:auto;aspect-ratio:1/1;border-radius:12px;background:#E9E1D3}
 .cues{margin:14px 0 0;padding-left:20px}
 .cues li{margin:0 0 6px;padding-left:2px}
 .cues li::marker{color:var(--acc)}
+.cues li:first-child{font-weight:600}
 .alt,.stop{margin:10px 0 0;font-size:15px;line-height:1.4}
 .alt b,.stop b{font:700 14px/1 var(--display);letter-spacing:.08em;text-transform:uppercase}
 .stop b{color:var(--acc)}
@@ -92,23 +92,6 @@ th{font:700 14px/1 var(--display);letter-spacing:.08em;text-transform:uppercase;
 tr:last-child td{border-bottom:0}
 td:first-child{font:700 17px/1.2 var(--display);white-space:nowrap}
 
-/* figure parts */
-.fl{stroke:var(--line);stroke-width:2}
-.bd{stroke:var(--fig);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;fill:none}
-.far{opacity:.36}
-.hd{fill:var(--fbg);stroke:var(--fig);stroke-width:4}
-.m{fill:var(--prop)}
-.mc{fill:none;stroke:var(--prop);stroke-width:3}
-.w{fill:var(--acc)}
-.cb{stroke:var(--prop);stroke-width:1.5;fill:none}
-.ar{fill:none;stroke:var(--acc);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.ft{fill:var(--foot)}
-.matr{fill:none;stroke:var(--prop);stroke-width:2;stroke-dasharray:5 4}
-.figs figure.gif{padding:0;background:none;max-width:380px;width:100%;justify-self:center;grid-column:1/-1}
-.figs figure.gif img{display:block;width:100%;height:auto;aspect-ratio:1/1;border-radius:12px;background:#E9E1D3}
-.figs figure:only-child{grid-column:1/-1;max-width:280px;width:100%;justify-self:center}
-.dot{fill:var(--fig)}
-.cut{fill:var(--fbg)}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 </style>
 
@@ -120,189 +103,88 @@ td:first-child{font:700 17px/1.2 var(--display);white-space:nowrap}
 </div>
 
 <script>
-/* ---------- figure helpers ---------- */
-const pt=a=>a[0]+' '+a[1];
-const DB=(x,y,w,h)=>`<rect class="w" x="${x}" y="${y}" width="${w}" height="${h}" rx="3"/>`;
-const M=(x,y,w,h)=>`<rect class="m" x="${x}" y="${y}" width="${w}" height="${h}" rx="2"/>`;
-const CB=(x1,y1,x2,y2)=>`<line class="cb" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
-const MAT=`<rect class="matr" x="6" y="8" width="148" height="104" rx="6"/>`;
-const AR=d=>`<path class="ar" d="${d}"/>`;
-const LEG=(pts,cls='bd')=>`<path class="${cls}" d="M${pts.map(pt).join('L')}"/>`;
-const HEAD=(x,y,r=8)=>`<circle class="hd" cx="${x}" cy="${y}" r="${r}"/>`;
-
-function draw(q,label){
-  let o='';
-  if(q.floor!==null && (!q.nofig || q.floor!==undefined)) {
-    const f=q.floor===undefined?108:q.floor;
-    o+=`<line class="fl" x1="4" y1="${f}" x2="156" y2="${f}"/>`;
-  }
-  o+=q.back||'';
-  if(!q.nofig){
-    if(q.k2) o+=LEG([q.p,q.k2,q.a2].concat(q.t2?[q.t2]:[]),'bd far');
-    if(q.e2) o+=LEG([q.s,q.e2,q.w2],'bd far');
-    o+=`<path class="bd" d="M${pt(q.s)} ${q.c?'Q'+pt(q.c):'L'} ${pt(q.p)}"/>`;
-    if(q.k) o+=LEG([q.p,q.k,q.a].concat(q.t?[q.t]:[]));
-    if(q.e) o+=LEG([q.s,q.e,q.w]);
-    o+=HEAD(q.h[0],q.h[1]);
-  }
-  o+=q.front||'';
-  return `<svg viewBox="${q.vb||'0 -14 160 134'}" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg">${o}</svg>`;
-}
-
-/* ---------- poses ---------- */
-const ST={h:[80,20],s:[80,32],p:[80,64],k:[80,87],a:[80,106],t:[88,107]};
-const AF={s:[100,80],p:[66,80],e:[100,94],w:[100,107],k:[66,106],a:[42,106],t:[37,106]};
-
-const top90=m=>{
-  const X=pts=>pts.map(([x,y])=>[m?160-x:x,y]);
-  return {nofig:true,floor:null,
-    back:LEG(X([[74,70],[48,72],[46,98]]))+LEG(X([[86,70],[92,44],[64,44]])),
-    front:`<circle class="hd" cx="80" cy="70" r="11"/>`};
-};
-
 const EX={
 /* ---------- warm-up ---------- */
-catcamel:{name:'Cat–camel',plain:'On hands and knees, slowly round your spine, then let it sag',rx:'6 slow cycles',
-  poses:[{label:'Cat: round up',...AF,h:[110,92],c:[83,60]},{label:'Camel: sag gently',...AF,h:[113,68],c:[83,98]}],
-  cues:['Hands under shoulders, knees under hips.','Breathe out as you round up. Breathe in as the belly sinks slightly.','Move smoothly and stop short of the end of your range.'],
-  alt:'No floor space? Sit on a bench with hands on your knees and round and arch the same way.'},
-hipflexor:{name:'Half-kneeling hip flexor stretch',plain:'Kneel on one knee and glide the hips forward',rx:'30 s per side × 2',
-  poses:[
-   {label:'Start',h:[68,34],s:[68,46],p:[68,80],k:[92,78],a:[92,104],t:[100,106],k2:[68,104],a2:[44,104],t2:[40,106],e:[58,62],w:[68,76],back:M(56,105,26,3)},
-   {label:'Shift forward',h:[78,34],s:[78,46],p:[78,80],k:[100,78],a:[100,104],t:[108,106],k2:[78,104],a2:[54,104],t2:[50,106],e:[68,62],w:[78,76],back:M(66,105,26,3),front:AR('M60 94h12m-4-4 4 4-4 4')}],
-  cues:['Fold a mat under the kneeling knee.','Tuck the tailbone under first, so your belt buckle tilts up.','Then shift forward a little. The stretch is at the front of the back-leg hip.','If your low back starts to arch or ache, you went too far.']},
-ninety:{name:'90/90 hip rotation',plain:'Sit with both knees bent at right angles, then swing the knees to the other side',rx:'5 switches each way, slow',
-  poses:[{label:'Right leg in front',...top90(false)},{label:'Left leg in front',...top90(true)}],
-  cues:['Sit tall. Hands on the floor behind you are fine.','Lift the knees and swing both legs across. Do not push with your hands.','Stay inside a range that does not pinch the front of the hip.'],
-  alt:'Both views are from above. You face the top of the picture.'},
-ankle:{name:'Knee-to-wall ankle rock',plain:'Bend the front knee toward a wall without lifting the heel',rx:'10 per side',
-  poses:[
-   {label:'Start',h:[98,22],s:[90,34],p:[84,66],k:[100,88],a:[100,106],t:[110,107],k2:[78,88],a2:[72,106],t2:[78,107],e:[104,42],w:[119,46],back:M(122,6,8,102)},
-   {label:'Knee to wall',h:[106,26],s:[98,38],p:[94,68],k:[115,84],a:[100,106],t:[110,107],k2:[82,88],a2:[72,106],t2:[78,107],e:[110,46],w:[121,50],back:M(122,6,8,102)}],
-  cues:['Start with toes about 4 inches from the wall.','The heel stays on the floor the whole time.','The knee travels over the second toe, not inward. Keep the big toe pressed down so the arch holds.','Move the foot back a little each week as it gets easier.']},
+catcamel:{name:"Cat-cow",plain:"On hands and knees, round your back up, then let it sag gently",rx:"6 slow cycles",
+  cues:["Move with your breath: breathe out as you round up (cat), breathe in as the belly sinks (cow).","Hands under shoulders, knees under hips.","Stay inside a comfortable range. Do not force the end of the sag."],
+  alt:"No floor space? Sit on a bench with hands on your knees and round and arch the same way."},
+hipflexor:{name:"Half-kneeling hip flexor stretch",plain:"Kneel on one knee and glide the hips forward",rx:"30 s per side × 2",
+  cues:["Tuck the tailbone under first, so your belt buckle tilts up. This is what makes the stretch work.","Then shift forward a little. You feel it at the front of the back-leg hip.","Fold a mat under the kneeling knee. The front knee stays over the ankle.","If your low back starts to arch or ache, you went too far."]},
+ninety:{name:"90/90 hip switches",plain:"Sit with both knees bent at right angles, then let both knees fall to the other side",rx:"5 switches each way, slow",
+  cues:["Lift the knees and swing both legs across together. Do not push with your hands.","Sit tall, with your hands on the floor beside you for balance.","Stay inside a range that does not pinch the front of the hip."],
+  alt:"Back rounds or hips feel tight? Sit on a folded towel."},
+ankle:{name:"Knee-to-wall ankle rock",plain:"Hands on a wall, bend the front knee toward it without lifting the heel",rx:"10 per side",
+  cues:["Front heel stays flat on the floor the whole time. That is the point of the drill.","Front foot about 4 inches from the wall, back foot a step behind, hands on the wall.","The knee travels over the second toe, not inward. Keep the big toe pressed down so the arch holds.","Move the front foot back a little each week as it gets easier."]},
 
 /* ---------- strength A ---------- */
-goblet:{name:'Goblet squat to box',plain:'Squat down until you lightly touch a box with your hips',rx:'2 × 8–10',try:'Try 10–15 lb dumbbell',
-  poses:[
-   {label:'Start',...ST,e:[84,47],w:[90,35],front:DB(88,29,8,12),back:M(38,88,28,20)},
-   {label:'Bottom',h:[82,44],s:[77,55],p:[60,84],k:[86,82],a:[82,107],t:[90,107],e:[86,66],w:[92,58],front:DB(90,51,8,12),back:M(38,88,28,20)}],
-  cues:['Hold one dumbbell upright against your chest, elbows pointing down.','Feet shoulder-width, toes turned out slightly.','Push the hips back and down, like sitting into a chair. Touch the box, do not drop onto it.','Knees follow the toes. Keep weight mid-foot and the arches lifted.','Stand by pushing the floor away.'],
-  alt:'No box? Use any bench or a sturdy chair.',
-  stop:'The lower back rounds at the bottom (use a higher box) or the arches cave inward.'},
-rdl:{name:'Dumbbell Romanian deadlift',plain:'The hip hinge: push your hips back like closing a car door with your backside',rx:'2 × 8–10',try:'Try 10–15 lb in each hand',
-  poses:[
-   {label:'Start',...ST,e:[81,48],w:[83,64],front:DB(80,62,8,12)},
-   {label:'Hinge',h:[106,51],s:[95,54],p:[62,62],k:[70,85],a:[64,107],t:[72,107],e:[96,70],w:[96,85],front:DB(92,84,8,12)}],
-  cues:['Soft knees, shins nearly vertical the whole way down.','Dumbbells slide down the front of your thighs.','Keep a flat back from head to tailbone. Chin slightly tucked.','Go down only as far as the back stays flat (mid-shin at most).','Squeeze the glutes to stand tall.'],
-  alt:'No dumbbells? Use a light barbell or a kettlebell held with both hands.',
-  stop:'Back pain, or pain or tingling that travels into a leg.'},
-row:{name:'Seated cable row',plain:'Pull the handle to your belly, elbows going straight back',rx:'2 × 10',try:'Start with the lightest plates',
-  poses:[
-   {label:'Reach',h:[52,44],s:[52,56],p:[52,90],k:[78,86],a:[98,96],t:[100,102],e:[70,58],w:[88,60],back:M(36,92,34,6)+M(102,76,4,32)+M(132,36,16,72)+CB(90,60,132,60),front:DB(87,54,3,12)},
-   {label:'Pull',h:[52,44],s:[52,56],p:[52,90],k:[78,86],a:[98,96],t:[100,102],e:[43,68],w:[60,65],back:M(36,92,34,6)+M(102,76,4,32)+M(132,36,16,72)+CB(63,65,132,60),front:DB(59,59,3,12)}],
-  cues:['Sit tall with the chest up and a slight bend in the knees.','Pull the elbows back to your ribs and squeeze the shoulder blades together.','Do not lean back to yank the weight.','Let the arms straighten slowly. Keep the shoulders down, not hunched.'],
-  alt:'No cable row? Do a one-arm dumbbell row with your free hand and knee on a bench, or use a resistance band.'},
-incline:{name:'Incline push-up',plain:'A push-up with your hands on a bench so it is easier',rx:'2 × 8–10',
-  poses:[
-   {label:'Top',h:[110,31],s:[102,40],p:[80,66],k:[64,85],a:[48,104],t:[55,107],e:[104,55],w:[106,70],back:M(98,71,52,37)},
-   {label:'Bottom',h:[114,45],s:[106,52],p:[80,73],k:[61,89],a:[43,104],t:[50,107],e:[97,66],w:[106,70],back:M(98,71,52,37)}],
-  cues:['Body in one straight line from head to heels. Ribs down, glutes tight.','Hands slightly wider than the shoulders, under the chest.','Elbows about 45° from the body, not flared out.','Lower the chest to the bench in 2 seconds, then press up. Breathe out as you press.'],
-  alt:'Too hard? Use a higher surface such as a wall or a rail. No bench? Use a Smith machine bar set at hip height.',
-  stop:'Pulling or a bulge at the old hernia scar.'},
-deadbug:{name:'Dead bug',plain:'Lie on your back and lower the opposite arm and leg slowly',rx:'2 × 6 per side',
-  poses:[
-   {label:'Start',vb:'0 56 160 54',floor:103,h:[23,95],s:[34,98],p:[68,98],e:[34,84],w:[34,70],k:[68,74],a:[92,74],t:[95,70]},
-   {label:'Opposite arm and leg',vb:'0 56 160 54',floor:103,h:[23,95],s:[34,98],p:[68,98],e:[34,84],w:[34,70],k:[92,92],a:[116,88],t:[121,84],e2:[22,84],w2:[8,78],k2:[68,74],a2:[92,74],t2:[95,70]}],
-  cues:['Lower back gently pressed into the floor and ribs down the whole time.','Move slowly: about 3 seconds out, 3 seconds back.','Go only as far as the low back stays flat.','Breathe out as the arm and leg extend.'],
-  alt:'Too hard? Lower only the legs, heel taps to the floor, keeping the arms up.',
-  stop:'The low back arches off the floor, or pulling at the hernia scar.'},
-sideplank:{name:'Side plank',plain:'Prop on one forearm and hold your body in a straight line',rx:'2 × 20–30 s per side',
-  poses:[{label:'Hold',h:[25,86],s:[36,88],p:[69,95],k:[93,100],a:[116,105],t:[122,107],e:[36,104],w:[50,104],e2:[36,72],w2:[36,57]}],
-  cues:['Elbow directly under the shoulder.','Stack the feet, or bend the knees for an easier version.','Lift the hips until shoulders, hips and ankles line up.','Keep breathing. Do not hold your breath.'],
-  stop:'Pulling or a bulge at the hernia scar, or back pain.'},
-shortfoot:{name:'Short-foot hold',plain:'Lift the arch of your foot without curling the toes',rx:'2 × 10 holds of 5 s per foot',
-  poses:[
-   {label:'Relaxed',nofig:true,floor:96,back:`<path class="ft" d="M40 96Q38 78 52 72L70 64Q104 66 128 84Q134 90 130 96Z"/><path class="cut" d="M52 96Q86 90 120 96Z"/>`+LEG([[64,64],[64,14]]),front:`<circle class="dot" cx="46" cy="96" r="3"/><circle class="dot" cx="122" cy="96" r="3"/>`},
-   {label:'Short foot',nofig:true,floor:96,back:`<path class="ft" d="M40 96Q38 78 52 72L70 64Q104 66 128 84Q134 90 130 96Z"/><path class="cut" d="M52 96Q86 58 120 96Z"/>`+LEG([[64,64],[64,14]]),front:`<circle class="dot" cx="46" cy="96" r="3"/><circle class="dot" cx="122" cy="96" r="3"/>`+AR('M88 50v-12m-4 4 4-4 4 4')}],
-  cues:['Foot flat on the floor. Weight on three points: heel, base of the big toe, base of the little toe.','Slide the ball of the foot toward the heel, as if shortening the foot. Do not curl the toes.','The arch rises a little. Toes stay long and relaxed.','Hold 5 seconds, then relax. Learn it seated, then try it standing.'],
-  alt:'This is the foot muscle drill that supports the arch. Do it in socks or barefoot.'},
-calf:{name:'Calf raise',plain:'Rise onto the balls of your feet and lower slowly',rx:'2 × 12',
-  poses:[
-   {label:'Down',...ST,e:[80,48],w:[80,62]},
-   {label:'Up',h:[80,11],s:[80,23],p:[80,55],k:[80,78],a:[80,97],t:[88,107],e:[80,39],w:[80,53],front:AR('M62 96v-14m-4 4 4-4 4 4')}],
-  cues:['Rise straight up over the big toe. Do not roll onto the outside of the foot.','Pause 1 second at the top, then lower over 3 seconds.','Fingertips on a wall or rail for balance.','Hold the short-foot arch while you rise.'],
-  stop:'Pain along the inner ankle, or one heel does not tilt slightly inward as you rise. Mention it to a podiatrist.'},
+goblet:{name:"Goblet box squat",plain:"Sit back until your hips lightly touch a box behind you, then stand",rx:"2 × 8–10",try:"Try 10–15 lb dumbbell",
+  cues:["Push the hips back and down, like sitting into a chair. Touch the box, do not drop onto it.","Hold one dumbbell upright against your chest, elbows pointing down.","Feet shoulder-width, toes turned out slightly. Knees follow the toes.","Weight mid-foot with the arches lifted. Stand by pushing the floor away."],
+  alt:"No box? Use any bench or a sturdy chair.",
+  stop:"The lower back rounds at the bottom (use a higher box) or the arches cave inward."},
+rdl:{name:"Dumbbell Romanian deadlift",plain:"The hip hinge: push your hips back like closing a car door with your backside",rx:"2 × 8–10",try:"Try 10–15 lb in each hand",
+  cues:["Keep a flat back from head to tailbone, chin slightly tucked. If the back rounds, you went too low.","Soft knees, shins nearly vertical the whole way down.","Dumbbells slide down the front of your thighs. In your first weeks stop at knee to mid-shin. The demo goes a little lower.","Squeeze the glutes to stand tall."],
+  alt:"No dumbbells? Use a light barbell or a kettlebell held with both hands.",
+  stop:"Back pain, or pain or tingling that travels into a leg."},
+row:{name:"Seated cable row",plain:"Pull the handle to your belly, elbows going straight back",rx:"2 × 10",try:"Start with the lightest plates",
+  cues:["Pull the elbows back to your ribs and squeeze the shoulder blades together.","Sit tall with the chest up and a slight bend in the knees, feet on the plates.","Do not lean back to yank the weight.","Let the arms straighten slowly. Shoulders down, not hunched."],
+  alt:"No cable row? Do a one-arm dumbbell row with your free hand and knee on a bench, or use a resistance band."},
+incline:{name:"Incline push-up",plain:"A push-up with your hands on a bench so it is easier",rx:"2 × 8–10",
+  cues:["Body in one straight line from head to heels. Ribs down, glutes tight.","Hands slightly wider than the shoulders, on a bench or box that cannot slide.","Elbows about 45° from the body, not flared out.","Lower the chest to the bench in 2 seconds, then press up. Breathe out as you press."],
+  alt:"Too hard? Use a higher surface such as a wall or a rail. No bench? Use a Smith machine bar set at hip height.",
+  stop:"Pulling or a bulge at the old hernia scar."},
+deadbug:{name:"Dead bug",plain:"Lie on your back and lower the opposite arm and leg slowly",rx:"2 × 6 per side",
+  cues:["Lower back gently pressed into the floor and ribs down the whole time. If it arches, shorten the range.","Start with arms pointing up and hips and knees bent at 90° (tabletop).","Lower the opposite arm and leg together: about 3 seconds out, 3 seconds back.","Breathe out as the arm and leg extend."],
+  alt:"Too hard? Lower only the legs, heel taps to the floor, keeping the arms up.",
+  stop:"The low back arches off the floor, or pulling at the hernia scar."},
+sideplank:{name:"Side plank (knees bent)",plain:"Prop on one forearm with your knees bent and lift your hips",rx:"2 × 20–30 s per side",
+  cues:["Lift the hips until shoulder, hip and knee form a straight line.","Elbow directly under the shoulder. Knees bent, shins on the floor.","Keep breathing. Do not hold your breath.","Once 30 s feels easy, progress to straight legs with the feet stacked."],
+  stop:"Pulling or a bulge at the hernia scar, or back pain."},
+shortfoot:{name:"Short foot exercise",plain:"Sitting, lift the arch of your foot without curling the toes",rx:"2 × 10 holds of 5 s per foot",
+  cues:["Slide the ball of the foot toward the heel, as if shortening the foot. Do not curl the toes.","Foot flat on the floor. Weight on three points: heel, base of the big toe, base of the little toe.","The arch rises a little. Toes stay long and relaxed. Hold 5 seconds, then relax.","Learn it seated, as in the demo, then try it standing."],
+  alt:"This drill trains the foot muscles that support the arch. Do it barefoot or in socks."},
+calf:{name:"Standing calf raise",plain:"Rise onto the balls of your feet and lower slowly",rx:"2 × 12",
+  cues:["Rise straight up over the big toe. Do not roll onto the outside of the foot.","Pause 1 second at the top, then lower over 3 seconds.","Fingertips on a wall or rail for balance.","Hold the short-foot arch while you rise."],
+  stop:"Pain along the inner ankle, or one heel does not tilt slightly inward as you rise. Mention it to a podiatrist."},
 
 /* ---------- strength B ---------- */
-stepup:{name:'Step-up',plain:'Step onto a low box and stand tall, then step back down',rx:'2 × 8 per leg',try:'Bodyweight first',
-  poses:[
-   {label:'Start',h:[76,16],s:[76,28],p:[76,60],k:[96,66],a:[102,89],t:[110,91],k2:[76,84],a2:[76,106],t2:[84,107],e:[76,44],w:[76,58],back:M(98,92,36,16)},
-   {label:'Top',h:[106,-3],s:[106,9],p:[106,41],k:[106,65],a:[106,88],t:[114,90],k2:[122,50],a2:[122,74],t2:[130,75],e:[106,25],w:[106,40],back:M(98,92,36,16)}],
-  cues:['Whole foot on the box. Knee tracks over the middle toes.','Push through the front heel. Do not bounce off the back foot.','Stand fully tall at the top, then lower for 3 seconds.','Use a rail or wall for balance if you wobble.'],
-  alt:'Box height: knee height or lower (6–12 inches). No box? Use the bottom step of a staircase or a low bench.',
-  stop:'The knee drifts inward, or the arch collapses on the stepping foot.'},
-bridge:{name:'Glute bridge',plain:'Lie on your back and lift your hips by squeezing your glutes',rx:'2 × 10',
-  poses:[
-   {label:'Down',vb:'0 62 160 50',floor:104,h:[22,97],s:[34,98],p:[68,98],e:[50,99],w:[64,100],k:[84,78],a:[98,101],t:[106,102]},
-   {label:'Up',vb:'0 62 160 50',floor:104,h:[22,97],s:[34,98],p:[67,89],e:[50,99],w:[64,100],k:[90,83],a:[98,101],t:[106,102],front:AR('M60 78v-12m-4 4 4-4 4 4')}],
-  cues:['Feet flat, hip-width apart, heels about a hand-length from your glutes.','Tuck the pelvis slightly, then lift the hips by squeezing the glutes.','Stop when shoulders, hips and knees form a straight line. Higher only arches the back.','Pause 2 seconds, then lower slowly.'],
-  alt:'If a bench is free, you can do a hip thrust: upper back on the bench edge, same cues.',
-  stop:'Back pain, or cramping in the back of the thigh (move the feet closer).'},
-pulldown:{name:'Lat pulldown',plain:'Pull the bar down to your upper chest',rx:'2 × 10',try:'Start with the lightest plates',
-  poses:[
-   {label:'Top',h:[58,47],s:[60,59],p:[66,92],k:[92,88],a:[96,108],t:[104,108],e:[70,44],w:[80,30],back:M(48,94,36,6)+M(84,78,18,7)+CB(80,26,82,-8)+`<circle class="mc" cx="82" cy="-10" r="4"/>`,front:`<circle class="w" cx="80" cy="29" r="4"/>`},
-   {label:'Bottom',h:[58,47],s:[60,59],p:[66,92],k:[92,88],a:[96,108],t:[104,108],e:[54,75],w:[70,64],back:M(48,94,36,6)+M(84,78,18,7)+CB(71,60,82,-8)+`<circle class="mc" cx="82" cy="-10" r="4"/>`,front:`<circle class="w" cx="71" cy="64" r="4"/>`}],
-  cues:['Thighs locked under the pad. Sit tall, leaning back slightly.','Grip just wider than the shoulders.','Drive the elbows down and back until the bar reaches the upper chest.','Never pull the bar behind your neck.','Return slowly. Do not let the shoulders shrug up.'],
-  alt:'No pulldown machine? Use an assisted pull-up machine, or a band anchored high.'},
-press:{name:'Seated dumbbell overhead press',plain:'Press two dumbbells overhead with your back against a pad',rx:'2 × 8',try:'Try 8–10 lb in each hand',
-  poses:[
-   {label:'Start',h:[54,46],s:[54,58],p:[54,92],k:[80,88],a:[82,108],t:[90,108],e:[64,70],w:[64,54],back:M(44,94,34,6)+M(38,44,6,50),front:DB(58,48,12,7)},
-   {label:'Press',h:[54,46],s:[54,58],p:[54,92],k:[80,88],a:[82,108],t:[90,108],e:[56,42],w:[58,26],back:M(44,94,34,6)+M(38,44,6,50),front:DB(52,19,12,7)}],
-  cues:['Back and head against the pad. Ribs down, do not arch.','Start with the dumbbells at ear level.','Press up and slightly together until the arms are straight. Do not lock hard.','Breathe out as you press. Lower in 2 seconds.'],
-  alt:'No back-supported bench? Use the shoulder press machine.',
-  stop:'The lower back arches, or any back pain. Drop the weight.'},
-pallof:{name:'Pallof press',plain:'Press a cable straight out and resist it twisting you',rx:'2 × 10 per side',try:'Start with the lightest plates',
-  poses:[
-   {label:'Hands at chest',nofig:true,floor:null,back:M(142,48,12,26)+M(58,94,12,18)+M(90,94,12,18)+CB(146,61,80,52)+LEG([[64,74],[96,74]])+LEG([[64,74],[62,62],[80,52]])+LEG([[96,74],[98,62],[80,52]]),front:HEAD(80,78,8)+`<circle class="w" cx="80" cy="52" r="4"/>`},
-   {label:'Press out',nofig:true,floor:null,back:M(142,48,12,26)+M(58,94,12,18)+M(90,94,12,18)+CB(146,61,80,24)+LEG([[64,74],[80,24]])+LEG([[96,74],[80,24]])+LEG([[64,74],[96,74]]),front:HEAD(80,78,8)+`<circle class="w" cx="80" cy="24" r="4"/>`}],
-  cues:['Stand side-on to the cable, handle at chest height, feet shoulder-width, knees soft.','Handle at the breastbone with elbows tucked.','Press straight out. Resist the pull trying to rotate you. Hold 2 seconds.','Breathe out as you press. Do not let the hips or shoulders twist.'],
-  alt:'No cable? Anchor a resistance band to a post or rack. Both views are from above.'},
-birddog:{name:'Bird dog',plain:'On hands and knees, reach the opposite arm and leg out long',rx:'2 × 6 per side, 5 s holds',
-  poses:[
-   {label:'Start',...AF,h:[112,76]},
-   {label:'Reach',s:[100,80],p:[66,80],h:[111,70],e:[116,80],w:[131,80],k:[66,106],a:[42,106],t:[37,106],e2:[100,94],w2:[100,107],k2:[42,80],a2:[18,80],t2:[14,79]}],
-  cues:['Hands under shoulders, knees under hips.','Reach long, not high. Lift only to body level.','Keep the hips level, as if a cup of water sat on your low back.','Hold 5 seconds, return slowly, then switch sides.'],
-  alt:'Knee sore? Fold a mat under the knees.',
-  stop:'The low back sags or twists, or pain at the lower back.'},
-farmer:{name:'Farmer carry',plain:'Walk tall holding a dumbbell in each hand',rx:'2 × 20 m (about 65 ft)',try:'Try 10 lb in each hand',
-  poses:[
-   {label:'Stand tall',...ST,e:[80,48],w:[80,64],front:DB(72,60,14,8)},
-   {label:'Walk',h:[80,20],s:[80,32],p:[80,64],k:[91,86],a:[97,106],t:[105,107],k2:[70,86],a2:[62,104],t2:[68,107],e:[80,48],w:[80,64],front:DB(72,60,14,8)}],
-  cues:['Light weights that feel easy. Carrying is the move that flares your back, so treat it as a test.','Tall posture, shoulders down, ribs stacked over hips.','Short, steady steps. Do not sway side to side.','Add 5 lb only after two weeks with no back stiffness the next day.'],
-  stop:'The back stiffens or aches. End the set and skip this move next time.'},
+stepup:{name:"Dumbbell step-up",plain:"Step onto a low box and stand tall, then step back down",rx:"2 × 8 per leg",try:"Bodyweight first, then add dumbbells",
+  cues:["Push through the front heel. Do not bounce off the back foot.","Whole foot on the box. Knee tracks over the middle toes.","Stand fully tall at the top, then lower for 3 seconds.","Use a rail or wall for balance if you wobble."],
+  alt:"Box height: knee height or lower (6–12 inches). No box? Use the bottom step of a staircase or a low bench.",
+  stop:"The knee drifts inward, or the arch collapses on the stepping foot."},
+bridge:{name:"Glute bridge",plain:"Lie on your back and lift your hips by squeezing your glutes",rx:"2 × 10",
+  cues:["Tuck the pelvis slightly, then lift the hips by squeezing the glutes.","Feet flat, hip-width apart, heels about a hand-length from your glutes.","Stop when shoulders, hips and knees form a straight line. Higher only arches the back.","Pause 2 seconds, then lower slowly."],
+  alt:"If a bench is free, you can do a hip thrust: upper back on the bench edge, same cues.",
+  stop:"Back pain, or cramping in the back of the thigh (move the feet closer)."},
+pulldown:{name:"Lat pulldown",plain:"Pull the bar down to your upper chest",rx:"2 × 10",try:"Start with the lightest plates",
+  cues:["Drive the elbows down and back until the bar reaches the upper chest. Never pull the bar behind your neck.","Thighs locked under the pad. Sit tall, leaning back slightly.","Grip just wider than the shoulders.","Return slowly. Do not let the shoulders shrug up."],
+  alt:"No pulldown machine? Use an assisted pull-up machine, or a band anchored high."},
+press:{name:"Seated dumbbell shoulder press",plain:"Press two dumbbells overhead with your back against a pad",rx:"2 × 8",try:"Try 8–10 lb in each hand",
+  cues:["Back and head against the pad, ribs down. If the lower back arches, drop the weight.","Start with the dumbbells at ear level.","Press up and slightly together until the arms are straight. Do not lock hard.","Breathe out as you press. Lower in 2 seconds."],
+  alt:"No back-supported bench? Use the shoulder press machine.",
+  stop:"The lower back arches, or any back pain. Drop the weight."},
+pallof:{name:"Pallof press",plain:"Press a cable straight out from your chest and resist it twisting you",rx:"2 × 10 per side",try:"Start with the lightest plates",
+  cues:["Resist the pull. Hips and shoulders stay square; do not let them twist.","Stand side-on to the cable at chest height, feet shoulder-width, knees soft.","Start with the handle at your breastbone, elbows tucked. Press straight out and hold 2 seconds.","Breathe out as you press."],
+  alt:"No cable? Anchor a resistance band to a post or rack."},
+birddog:{name:"Bird dog",plain:"On hands and knees, reach the opposite arm and leg out long",rx:"2 × 6 per side, 5 s holds",
+  cues:["Keep the hips level, as if a cup of water sat on your low back.","Hands under shoulders, knees under hips.","Reach long, not high. Lift only to body level. Hold 5 seconds, return slowly, then switch sides."],
+  alt:"Knee sore? Fold a mat under the knees.",
+  stop:"The low back sags or twists, or pain at the lower back."},
+farmer:{name:"Farmer’s carry",plain:"Walk tall holding a dumbbell in each hand",rx:"2 × 20 m (about 65 ft)",try:"Try 10 lb in each hand",
+  cues:["Light weights that feel easy. Carrying is the move that flares your back, so treat it as a test.","Tall posture, shoulders down, ribs stacked over hips.","Short, steady steps. Do not sway side to side.","Add 5 lb only after two weeks with no back stiffness the next day."],
+  stop:"The back stiffens or aches. End the set and skip this move next time."},
 
 /* ---------- Wednesday ---------- */
-bike:{name:'Upright bike or incline walk',plain:'Steady, easy pace where you can speak in full sentences',rx:'30 min · effort 3–4 / 10 · about 108–126 bpm',
-  poses:[{label:'Riding position',h:[79,28],s:[70,38],p:[52,66],k:[76,78],a:[84,98],t:[92,100],k2:[66,84],a2:[72,98],e:[87,44],w:[103,50],
-    back:M(40,70,20,5)+CB(52,74,80,98)+CB(80,98,104,52)+`<circle class="mc" cx="80" cy="98" r="11"/>`+M(46,105,84,3),front:`<circle class="m" cx="105" cy="50" r="3"/>`}],
-  cues:['Saddle height: a slight bend in the knee at the bottom of the pedal stroke.','Sit tall with relaxed shoulders and light hands on the bars.','About 70–90 rpm. Lower the resistance instead of grinding.','First 5 minutes build up gradually. Last 3 minutes ease off.'],
-  alt:'Bike busy? Treadmill at 3–3.5 mph with a 3–5% incline, or the elliptical.',
-  stop:'Chest pressure, dizziness, or unusual shortness of breath.'},
-hamstring:{name:'Standing hamstring stretch',plain:'Heel on a low step, then hinge forward with a flat back',rx:'30–45 s per side',
-  poses:[
-   {label:'Start',h:[70,10],s:[70,22],p:[70,56],k:[88,70],a:[106,86],t:[112,81],k2:[70,82],a2:[70,106],t2:[78,107],e:[78,36],w:[86,46],back:M(98,90,36,18)},
-   {label:'Hinge',h:[111,38],s:[100,42],p:[70,56],k:[88,70],a:[106,86],t:[112,81],k2:[70,82],a2:[70,106],t2:[78,107],e:[103,57],w:[103,74],back:M(98,90,36,18)}],
-  cues:['Heel on a step about 12–18 inches high, knee straight but not locked.','Hinge from the hips with a long back. Do not round to reach your toes.','Stop at a firm, gentle stretch. Never sharp pain.','Breathe slowly and let the stretch ease off over the hold.'],
-  alt:'No step? Lie on your back and loop a towel around the foot of the raised leg.'},
-wallcalf:{name:'Wall calf stretch',plain:'Back leg straight with the heel down, front knee bent',rx:'30–45 s per side',
-  poses:[{label:'Hold',h:[105,26],s:[100,36],p:[84,66],k:[70,86],a:[56,106],t:[62,107],k2:[102,86],a2:[102,106],t2:[110,107],e:[111,42],w:[122,46],back:M(124,6,8,102)}],
-  cues:['Back heel stays flat. Toes point straight ahead.','Keep the back knee straight and lean the hips toward the wall.','Bend the back knee slightly to reach the lower calf and Achilles.','Keep the arch lifted. Do not let the foot roll inward.']},
-openbook:{name:'Open book (thoracic rotation)',plain:'Lie on your side and open the top arm toward the other side',rx:'6 per side, slow',
-  poses:[
-   {label:'Arms together',nofig:true,floor:null,back:MAT+LEG([[30,60],[74,60]])+LEG([[74,60],[74,90],[44,90]])+LEG([[38,60],[38,92]],'bd far')+LEG([[34,60],[34,92]]),front:HEAD(20,60,8)},
-   {label:'Open',nofig:true,floor:null,back:MAT+LEG([[30,60],[74,60]])+LEG([[74,60],[74,90],[44,90]])+LEG([[34,60],[34,92]])+LEG([[34,60],[34,28]]),front:HEAD(20,60,8)+AR('M34 18l-4 6m4-6 4 6')}],
-  cues:['Lie on your side with hips and knees bent about 90°. Both arms straight in front.','Keep the knees stacked and pressed together.','Turn the chest and follow the top hand with your eyes.','Rotate only as far as the knees stay put.'],
-  alt:'Both views are from above. Your head is on the left.'}
+bike:{name:"Upright stationary bike",plain:"Steady, easy pace where you can speak in full sentences",rx:"30 min · effort 3–4 / 10 · about 108–126 bpm",
+  cues:["Keep the effort easy enough to speak in full sentences. Lower the resistance instead of grinding.","Saddle height: a slight bend in the knee at the bottom of the pedal stroke.","Sit tall with relaxed shoulders and light hands on the bars. About 70–90 rpm.","First 5 minutes build up gradually. Last 3 minutes ease off."],
+  alt:"Bike busy? Treadmill at 3–3.5 mph with a 3–5% incline, or the elliptical.",
+  stop:"Chest pressure, dizziness, or unusual shortness of breath."},
+hamstring:{name:"Standing hamstring stretch",plain:"Heel on a low step, then hinge forward with a flat back",rx:"30–45 s per side",
+  cues:["Hinge from the hips with a long back. Do not round to reach your toes.","Heel on a step about 12–18 inches high, knee straight but not locked.","Rest your hands on the front thigh. Stop at a firm, gentle stretch, never sharp pain.","Breathe slowly and let the stretch ease off over the hold."],
+  alt:"No step? Lie on your back and loop a towel around the foot of the raised leg."},
+wallcalf:{name:"Wall calf stretch",plain:"Hands on a wall, back leg straight with the heel down",rx:"30–45 s per side",
+  cues:["Back heel stays flat. Toes point straight ahead.","Hands on the wall at chest height. Lean the hips toward the wall with the back knee straight.","Then bend the back knee slightly to reach the lower calf and Achilles.","Keep the arch lifted. Do not let the foot roll inward."]},
+openbook:{name:"Open book stretch",plain:"Lie on your side and sweep the top arm open toward the floor behind you",rx:"6 per side, slow",
+  cues:["Keep the knees stacked and pressed together. They must not move.","Lie on your side with hips and knees bent about 90°, a folded towel under your head, arms straight in front.","Sweep the top arm up and over, turn the chest, and follow the hand with your eyes.","Rotate only as far as the knees stay put. Breathe out as you open."]}
 };
 
 /* ---------- sessions ---------- */
@@ -311,7 +193,7 @@ const DAYS={
  tue:{tab:'Tue',sub:'Strength A',name:'Strength A',eyebrow:'Tuesday · weeks 1–4',
   lede:'Legs, back, chest and core. Rest 60–90 seconds between sets.',
   chips:['About 60 min','2 sets','Effort 5–6 / 10'],
-  note:'<b>First day:</b> do one set of each move with the lightest weight you can find. The goal is to learn the shapes. If a station is taken or missing, use the swap line under that move.',
+  note:'<b>First day:</b> do one set of each move with the lightest weight you can find. The goal is to learn the shapes. If a station is taken or missing, use the swap line under that move. <b>Reading the demos:</b> each one loops while the camera circles the figure, and red marks the working muscles. The bold line under each demo is the cue that matters most.',
   blocks:[{t:'Warm-up',m:'8 min',ex:WARM},{t:'Main work',m:'About 45 min',ex:['goblet','rdl','row','incline','deadbug','sideplank','shortfoot','calf']}],
   after:'Cool-down: 3 minutes of easy walking, then repeat the hip flexor stretch from the warm-up.'},
  wed:{tab:'Wed',sub:'Cardio',name:'Easy cardio',eyebrow:'Wednesday · weeks 1–4',
@@ -334,6 +216,7 @@ const GUIDE=`
 <ul>
 <li>You need: light dumbbells (5–25 lb), a cable machine, a lat pulldown, a bench or low box, and a mat.</li>
 <li>Ask the front desk where the dumbbell rack, cable stations and mats are. Every move lists a swap if something is missing.</li>
+<li>Demos play automatically and load once, then work offline. The first line under each demo, in bold, is the one cue to get right before any other.</li>
 <li>Wear stable, cushioned shoes. Barefoot only for the short-foot drill.</li>
 </ul>
 <h2>How hard</h2>
@@ -366,9 +249,6 @@ const GUIDE=`
 </ul>
 </div>`;
 
-/* ---------- animated demos (media/<id>.webp). A move without a file falls back to its drawn figures ---------- */
-const MEDIA=new Set(['catcamel','hipflexor','ninety','ankle','goblet','rdl','row','incline','deadbug','sideplank','shortfoot','calf','stepup','bridge','pulldown','press','pallof','birddog','farmer','bike','hamstring','wallcalf','openbook']);
-
 /* ---------- build ---------- */
 const store={get(){try{return JSON.parse(localStorage.getItem('plan-done')||'{}')}catch(e){return {}}},
   set(o){try{localStorage.setItem('plan-done',JSON.stringify(o))}catch(e){}}};
@@ -376,9 +256,7 @@ let done=store.get();
 
 function card(day,id,i){
   const e=EX[id],key=day+'-'+id;
-  const figs=MEDIA.has(id)
-    ?`<figure class="gif"><img src="media/${id}.webp" width="480" height="480" loading="lazy" decoding="async" alt="Animated demo: ${e.name}"></figure>`
-    :e.poses.map(q=>`<figure>${draw(q,e.name+': '+q.label)}<figcaption>${q.label}</figcaption></figure>`).join('');
+  const figs=`<figure class="gif"><img src="media/${id}.webp" width="480" height="480" loading="lazy" decoding="async" alt="Animated demo: ${e.name}" onerror="this.replaceWith(Object.assign(document.createElement('p'),{className:'plain',textContent:'Demo not loaded. Follow the steps below.'}))"></figure>`;
   return `<article class="ex">
   <div class="eh"><span class="n">${i+1}</span><div><h3>${e.name}</h3><p class="plain">${e.plain}</p></div>
   <label class="done"><input type="checkbox" data-k="${key}" ${done[key]?'checked':''}>Done</label></div>
@@ -439,6 +317,7 @@ mainEl.addEventListener('click',e=>{
 const byDay=['tue','tue','tue','wed','fri','fri','tue'];
 const h=(location.hash||'').slice(1);
 show(order.includes(h)?h:byDay[new Date().getDay()]);
+window.addEventListener('hashchange',()=>{const x=location.hash.slice(1);if(order.includes(x))show(x)});
 window.scrollTo(0,0);
 </script>
 <script>

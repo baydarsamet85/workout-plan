@@ -1,5 +1,5 @@
-// Bump the number in CACHE (plan-v2 -> plan-v3) every time you change any file, so phones pick up the update.
-const CACHE = 'plan-v2';
+// Bump the number in CACHE (plan-v3 -> plan-v4) every time you change any file, so phones pick up the update.
+const CACHE = 'plan-v3';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   // animated demos (~6 MB total, downloaded once so the gym works offline)
