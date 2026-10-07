@@ -104,6 +104,8 @@ td:first-child{font:700 17px/1.2 var(--display);white-space:nowrap}
 .ar{fill:none;stroke:var(--acc);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
 .ft{fill:var(--foot)}
 .matr{fill:none;stroke:var(--prop);stroke-width:2;stroke-dasharray:5 4}
+.figs figure.gif{padding:0;background:none;max-width:380px;width:100%;justify-self:center;grid-column:1/-1}
+.figs figure.gif img{display:block;width:100%;height:auto;aspect-ratio:1/1;border-radius:12px;background:#E9E1D3}
 .figs figure:only-child{grid-column:1/-1;max-width:280px;width:100%;justify-self:center}
 .dot{fill:var(--fig)}
 .cut{fill:var(--fbg)}
@@ -364,6 +366,9 @@ const GUIDE=`
 </ul>
 </div>`;
 
+/* ---------- animated demos (media/<id>.webp). A move without a file falls back to its drawn figures ---------- */
+const MEDIA=new Set(['catcamel','hipflexor','ninety','ankle','goblet','rdl','row','incline','deadbug','sideplank','shortfoot','calf','stepup','bridge','pulldown','press','pallof','birddog','farmer','bike','hamstring','wallcalf','openbook']);
+
 /* ---------- build ---------- */
 const store={get(){try{return JSON.parse(localStorage.getItem('plan-done')||'{}')}catch(e){return {}}},
   set(o){try{localStorage.setItem('plan-done',JSON.stringify(o))}catch(e){}}};
@@ -371,7 +376,9 @@ let done=store.get();
 
 function card(day,id,i){
   const e=EX[id],key=day+'-'+id;
-  const figs=e.poses.map(q=>`<figure>${draw(q,e.name+': '+q.label)}<figcaption>${q.label}</figcaption></figure>`).join('');
+  const figs=MEDIA.has(id)
+    ?`<figure class="gif"><img src="media/${id}.webp" width="480" height="480" loading="lazy" decoding="async" alt="Animated demo: ${e.name}"></figure>`
+    :e.poses.map(q=>`<figure>${draw(q,e.name+': '+q.label)}<figcaption>${q.label}</figcaption></figure>`).join('');
   return `<article class="ex">
   <div class="eh"><span class="n">${i+1}</span><div><h3>${e.name}</h3><p class="plain">${e.plain}</p></div>
   <label class="done"><input type="checkbox" data-k="${key}" ${done[key]?'checked':''}>Done</label></div>

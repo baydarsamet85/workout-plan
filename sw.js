@@ -1,7 +1,9 @@
-// Bump CACHE (plan-v1 -> plan-v2) every time you change any file, so phones pick up the update.
-const CACHE = 'plan-v1';
+// Bump the number in CACHE (plan-v2 -> plan-v3) every time you change any file, so phones pick up the update.
+const CACHE = 'plan-v2';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest',
-  'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png'];
+  'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
+  // animated demos (~6 MB total, downloaded once so the gym works offline)
+  'media/catcamel.webp', 'media/hipflexor.webp', 'media/ninety.webp', 'media/ankle.webp', 'media/goblet.webp', 'media/rdl.webp', 'media/row.webp', 'media/incline.webp', 'media/deadbug.webp', 'media/sideplank.webp', 'media/shortfoot.webp', 'media/calf.webp', 'media/stepup.webp', 'media/bridge.webp', 'media/pulldown.webp', 'media/press.webp', 'media/pallof.webp', 'media/birddog.webp', 'media/farmer.webp', 'media/bike.webp', 'media/hamstring.webp', 'media/wallcalf.webp', 'media/openbook.webp'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
